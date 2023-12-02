@@ -1,0 +1,7 @@
+# Composer ignores
+/vendor
+/node_modules
+/dist
+composer.phar
+composer.lock
+server.pem

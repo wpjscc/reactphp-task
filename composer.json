@@ -1,0 +1,16 @@
+{
+    "name": "wpjscc/reactphp-task",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Wpjscc\\ReactphpTask\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "wpjscc",
+            "email": "wpjscc@gmail.com"
+        }
+    ],
+    "require": {}
+}
