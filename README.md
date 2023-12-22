@@ -15,7 +15,8 @@ success
 use Wpjscc\Task\Task;
 
 
-Task::run();
+Task::$processNumber = 4;
+
 
 $event = Task::addTask(function ($uuid) {
     Task::replayData($uuid, 'hello world');
@@ -36,7 +37,7 @@ fail
 ```
 use Wpjscc\Task\Task;
 
-Task::run();
+Task::$processNumber = 4;
 
 $event = Task::addTask(function ($uuid) {
     Task::replayData($uuid, 'hello world');
@@ -59,7 +60,7 @@ use Wpjscc\Task\Task;
 use Evenement\EventEmitter;
 use React\EventLoop\Loop;
 
-Task::run();
+Task::$processNumber = 4;
 
 $event = Task::addTask(function ($uuid) {
     $event = new EventEmitter();

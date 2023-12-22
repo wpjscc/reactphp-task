@@ -4,9 +4,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Wpjscc\Task\Task;
 
-
-Task::run();
-
+Task::$processNumber = 4;
 
 $event = Task::addTask(function ($uuid) {
     Task::replayData($uuid, 'hello world');

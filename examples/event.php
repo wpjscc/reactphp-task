@@ -6,7 +6,8 @@ use Wpjscc\Task\Task;
 use Evenement\EventEmitter;
 use React\EventLoop\Loop;
 
-Task::run();
+Task::$processNumber = 4;
+
 
 $event = Task::addTask(function ($uuid) {
     $event = new EventEmitter();
