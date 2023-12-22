@@ -4,4 +4,3 @@
 /dist
 composer.phar
 composer.lock
-server.pem
