@@ -11,6 +11,8 @@ use Evenement\EventEmitter;
 class Task
 {
     public static $processNumber = 1;
+    public static $log = true;
+    public static $debug = true;
 
     protected static $stdout;
 
@@ -56,7 +58,9 @@ class Task
                 foreach ($messages as $message) {
                     if (is_array($message)) {
                         if (isset($message['cmd'])) {
-                            static::getStdout()->write(json_encode($message, JSON_UNESCAPED_UNICODE)."\n");
+                            if (static::$log){
+                                static::getStdout()->write(json_encode($message, JSON_UNESCAPED_UNICODE)."\n");
+                            }
                             if ($message['cmd'] == 'init') {
                                 static::$taskProcessInit[$process->getPid()] = true;
                                 static::$taskProcessEvents[$process->getPid()]->emit('init', [$message['data'] ?? []]);
@@ -89,26 +93,39 @@ class Task
 
 
         $process->stdout->on('end', function () {
-            echo "end\n";
+            static::debug('end');
         });
 
         $process->stdout->on('error', function (\Exception $e) {
-            echo 'error: ' . $e->getMessage();
+            static::debug('error: ' . $e->getMessage());
         });
 
         $process->stdout->on('close', function () {
-            echo "closed\n";
+            static::debug('closed');
         });
 
 
         $process->on('exit', function ($exitCode, $termSignal) use ($process, $php) {
-            echo "Process exited with code $exitCode\n";
+            static::debug("Process exited with code $exitCode");
             unset(static::$processes[$process->getPid()]);
             unset(static::$unpackers[$process->getPid()]);
             unset(static::$taskProcessInit[$process->getPid()]);
             unset(static::$taskProcessEvents[$process->getPid()]);
             static::runProcess($php);
         });
+    }
+
+    public static function debug($msg)
+    {
+        if (!static::$debug) {
+            return;
+        }
+
+        if (is_array($msg)) {
+            $msg = json_encode($msg, JSON_UNESCAPED_UNICODE);
+        }
+        echo $msg . "\n";
+       
     }
 
     public static function addTask($closure)
@@ -172,10 +189,6 @@ class Task
         } else {
             if ($data === false) {
                 static::replayFail($uuid);
-                static::replayLog([
-                    'msg' => 'fail handle task',
-                    'uuid' => $uuid,
-                ]);
             } else {
                 static::replaySuccess($uuid, $data);
             }

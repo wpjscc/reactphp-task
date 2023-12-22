@@ -6,7 +6,9 @@ use Wpjscc\Task\Task;
 use Evenement\EventEmitter;
 use React\EventLoop\Loop;
 
-$closure = function ($uuid) {
+Task::run();
+
+$event = Task::addTask(function ($uuid) {
     $event = new EventEmitter();
     $timer = Loop::addPeriodicTimer(1, function () use ($event, $uuid) {
         $event->emit('data', ['hello world']);
@@ -16,23 +18,12 @@ $closure = function ($uuid) {
         $event->emit('success', ['hello world  success']);
     });
     return $event;
-};
-Task::run();
-
-function msg($msg){
-    if (is_array($msg)) {
-        $msg = json_encode($msg);
-    }
-    Task::getStdout()->write($msg."\n");
-}
-
-$event = Task::addTask($closure);
+});
 
 $event->on('data', function ($data) {
-    // var_dump($data);
-    msg($data);
+    echo ($data)."\n";
 });
 
 $event->on('success', function ($data) {
-    msg($data);
+    echo ($data)."\n";
 });
