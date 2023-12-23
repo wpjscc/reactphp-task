@@ -17,6 +17,6 @@ $event->on('data', function ($data) {
     echo ($data) . "\n";
 });
 
-$event->on('fail', function ($data) {
+$event->once('fail', function ($data) {
     echo ($data) . "\n";
 });

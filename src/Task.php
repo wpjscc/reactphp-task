@@ -41,12 +41,14 @@ class Task
         }
     }
 
-    protected static function runProcess($php = null)
+    protected static function runProcess($php = null, $once = false)
     {
         $process = new Process('exec ' . ($php ?: 'php') . ' ' . __DIR__ . '/init.php');
         $process->start();
 
-        static::$processes[$process->getPid()] = $process;
+        if (!$once) {
+            static::$processes[$process->getPid()] = $process;
+        }
         static::$unpackers[$process->getPid()] = new BufferUnpacker;
         static::$taskProcessEvents[$process->getPid()] = new EventEmitter;
 
@@ -92,27 +94,42 @@ class Task
         });
 
 
-        $process->stdout->on('end', function () {
-            static::debug('end');
+        $process->stdout->on('end', function () use ($process) {
+            static::debug([
+                'pid' => $process->getPid(),
+                'end' => 'end',
+            ]);
         });
 
-        $process->stdout->on('error', function (\Exception $e) {
-            static::debug('error: ' . $e->getMessage());
+        $process->stdout->on('error', function (\Exception $e) use ($process) {
+            static::debug([
+                'pid' => $process->getPid(),
+                'error' => $e->getMessage(),
+            ]);
         });
 
-        $process->stdout->on('close', function () {
-            static::debug('closed');
+        $process->stdout->on('close', function () use ($process) {
+            static::debug([
+                'pid' => $process->getPid(),
+                'close' => 'close',
+            ]);
         });
 
-
-        $process->on('exit', function ($exitCode, $termSignal) use ($process, $php) {
-            static::debug("Process exited with code $exitCode");
+        $process->on('exit', function ($exitCode, $termSignal) use ($process, $php, $once) {
+            static::debug([
+                'pid' => $process->getPid(),
+                'exitCode' => $exitCode,
+                'termSignal' => $termSignal,
+            ]);
             unset(static::$processes[$process->getPid()]);
             unset(static::$unpackers[$process->getPid()]);
             unset(static::$taskProcessInit[$process->getPid()]);
             unset(static::$taskProcessEvents[$process->getPid()]);
-            static::runProcess($php);
+            if (!$once) {
+                static::runProcess($php);
+            }
         });
+        return $process;
     }
 
     public static function debug($msg)
@@ -128,15 +145,19 @@ class Task
        
     }
 
-    public static function addTask($closure)
+    public static function addTask($closure, $once = false, $php = null)
     {
-        if (!static::$running) {
-            static::run();
+        if (!static::$running && !$once) {
+            static::run($php);
         }
 
         $serialized = static::getSeralized($closure);
         // 随机一个进程
-        $process = static::$processes[array_rand(static::$processes)];
+        if ($once) {
+            $process = static::runProcess($php, true);
+        } else {
+            $process = static::$processes[array_rand(static::$processes)];
+        }
         $uuid = $process->getPid() . '-' . time() . '-' . uniqid() . '-' . md5($serialized);
         $event = new EventEmitter;
         static::$taskEvents[$uuid] = $event;
@@ -157,6 +178,15 @@ class Task
             $process->stdin->write($pack);
         }
 
+        if ($once) {
+            $event->once('success', function ($data) use ($process) {
+                $process->terminate();
+            });
+            $event->once('fail', function ($data) use ($process) {
+                $process->terminate();
+            });
+        }
+        
         return $event;
     }
 

@@ -25,6 +25,6 @@ $event->on('data', function ($data) {
     echo ($data)."\n";
 });
 
-$event->on('success', function ($data) {
+$event->once('success', function ($data) {
     echo ($data)."\n";
 });
